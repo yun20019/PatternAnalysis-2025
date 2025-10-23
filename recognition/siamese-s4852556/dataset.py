@@ -62,13 +62,24 @@ class SiameseISICDataset(Dataset):
 
         # Decide positive or negative pair
         if random.random() < 0.5:
-            # positive
+            # positive pair
             candidates = np.where(self.labels[self.indices] == label1)[0]
+            # Exclude the current image to avoid pairing the image with itself
+            candidates = [c for c in candidates if self.indices[c] != idx1]
             pair_label = 1
         else:
-            # negative
+            # negative pair
             candidates = np.where(self.labels[self.indices] != label1)[0]
             pair_label = 0
+
+        # Fallback: if no positive candidate is found, switch to negative pair
+        if len(candidates) == 0:
+            candidates = np.where(self.labels[self.indices] != label1)[0]
+            pair_label = 0
+
+        # Final fallback: if no negative candidate is found, use the same image
+        if len(candidates) == 0:
+            candidates = [idx]
 
         idx2 = self.indices[random.choice(candidates)]
         img2_path = self.image_paths[idx2]
