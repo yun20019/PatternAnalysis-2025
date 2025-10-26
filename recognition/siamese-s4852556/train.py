@@ -1,21 +1,40 @@
+import random
+import numpy as np
 import torch
 import torch.nn as nn
 import torch.optim as optim
 from torch.utils.data import DataLoader
+from dataset import (
+    SiameseISICDataset,  
+    build_image_label_list,
+    split_dataset,
+    default_transform  
+)
 from modules import SiameseNetwork
-from dataset import SiameseISICDataset, build_image_label_list, split_dataset, transform
 
+def set_seed(seed=42):
+    random.seed(seed)
+    np.random.seed(seed)
+    torch.manual_seed(seed)
+    torch.cuda.manual_seed_all(seed)
+    torch.backends.cudnn.deterministic = True
+    torch.backends.cudnn.benchmark = False
 
+set_seed(42)
+
+# Weighted Contrastive Loss to address imbalanced dataset
 class ContrastiveLoss(nn.Module):
-    def __init__(self, margin=1.0):
+    def __init__(self, margin=2.0, pos_weight=1.0):
         super(ContrastiveLoss, self).__init__()
         self.margin = margin
+        self.pos_weight = pos_weight
 
-    # Contrastive Loss Function
     def forward(self, output1, output2, label):
+        # L2 distance between embeddings
         distances = torch.norm(output1 - output2, p=2, dim=1)
-        loss = (1 - label) * 0.5 * distances.pow(2) + \
-               label * 0.5 * torch.pow(torch.clamp(self.margin - distances, min=0.0), 2)
+        # Weighted loss
+        loss = label * 0.5 * distances.pow(2) * self.pos_weight + \
+               (1 - label) * 0.5 * torch.pow(torch.clamp(self.margin - distances, min=0.0), 2)
         return loss.mean()
 
 
@@ -50,6 +69,7 @@ def validate(model, val_loader, criterion, device):
     return total_loss / len(val_loader)
 
 
+
 if __name__ == "__main__":
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -60,17 +80,30 @@ if __name__ == "__main__":
     train_dataset = SiameseISICDataset(image_paths, labels, train_idx, transform=transform)
     val_dataset = SiameseISICDataset(image_paths, labels, val_idx, transform=transform)
 
-    train_loader = DataLoader(train_dataset, batch_size=16, shuffle=True)
-    val_loader = DataLoader(val_dataset, batch_size=16, shuffle=False)
+    train_loader = DataLoader(train_dataset, batch_size=32, shuffle=True, num_workers=4)
+    val_loader = DataLoader(val_dataset, batch_size=32, shuffle=False, num_workers=4)
 
+    # -----------------------------
+    # Compute pos_weight
+    # -----------------------------
+    num_pos = (labels == 1).sum()
+    num_neg = (labels == 0).sum()
+    pos_weight = num_neg / num_pos
+    print(f"Positive samples: {num_pos} | Negative samples: {num_neg} | pos_weight = {pos_weight:.2f}")
+
+    # -----------------------------
     # Model, loss, optimizer
+    # -----------------------------
     model = SiameseNetwork(embedding_dim=128, freeze_backbone=True).to(device)
-    criterion = ContrastiveLoss(margin=1.0)
-    optimizer = optim.Adam(filter(lambda p: p.requires_grad, model.parameters()), lr=1e-4)
+    criterion = ContrastiveLoss(margin=1.0, pos_weight=pos_weight)
+    optimizer = optim.Adam(filter(lambda p: p.requires_grad, model.parameters()), lr=1e-4, weight_decay=1e-5)
 
-    # Training
-    epochs = 10
+    # -----------------------------
+    # Training loop
+    # -----------------------------
+    epochs = 20
     best_val_loss = float('inf')
+    patience, wait = 3, 0
 
     for epoch in range(epochs):
         train_loss = train(model, train_loader, criterion, optimizer, device)
