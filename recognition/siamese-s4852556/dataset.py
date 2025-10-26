@@ -60,30 +60,37 @@ class SiameseISICDataset(Dataset):
         img1_path = self.image_paths[idx1]
         label1 = self.labels[idx1]
 
-        # Decide positive or negative pair
+        # Decide positive or negative pair randomly
         if random.random() < 0.5:
-            # positive pair
-            candidates = np.where(self.labels[self.indices] == label1)[0]
-            # Exclude the current image to avoid pairing the image with itself
-            candidates = [c for c in candidates if self.indices[c] != idx1]
+            # Positive pair: same class but not the same image
+            candidates = np.where((self.labels[self.indices] == label1) &
+                                (self.indices != idx1))[0]
             pair_label = 1
         else:
-            # negative pair
-            candidates = np.where(self.labels[self.indices] != label1)[0]
+            # Negative pair: different class (exclude itself just in case)
+            candidates = np.where((self.labels[self.indices] != label1) &
+                                (self.indices != idx1))[0]
             pair_label = 0
 
-        # Fallback: if no positive candidate is found, switch to negative pair
+        # If no valid candidate is found (rare case), switch pair type
         if len(candidates) == 0:
-            candidates = np.where(self.labels[self.indices] != label1)[0]
-            pair_label = 0
+            if pair_label == 1:
+                candidates = np.where((self.labels[self.indices] != label1) &
+                                    (self.indices != idx1))[0]
+                pair_label = 0
+            else:
+                candidates = np.where((self.labels[self.indices] == label1) &
+                                    (self.indices != idx1))[0]
+                pair_label = 1
 
-        # Final fallback: if no negative candidate is found, use the same image
+        # If still empty (shouldn't happen), fallback to self
         if len(candidates) == 0:
             candidates = [idx]
 
         idx2 = self.indices[random.choice(candidates)]
         img2_path = self.image_paths[idx2]
 
+        # Load and transform
         img1 = Image.open(img1_path).convert('RGB')
         img2 = Image.open(img2_path).convert('RGB')
 
