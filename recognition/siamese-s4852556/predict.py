@@ -1,7 +1,19 @@
+import random
+import numpy as np
 import torch
 from torch.utils.data import DataLoader
 from modules import SiameseNetwork
 from dataset import SiameseISICDataset, build_image_label_list, split_dataset, transform
+
+def set_seed(seed=42):
+    random.seed(seed)
+    np.random.seed(seed)
+    torch.manual_seed(seed)
+    torch.cuda.manual_seed_all(seed)
+    torch.backends.cudnn.deterministic = True
+    torch.backends.cudnn.benchmark = False
+
+set_seed(42)
 
 def evaluate(model, test_loader, threshold, device):
     model.eval()
