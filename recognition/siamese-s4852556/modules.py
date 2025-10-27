@@ -3,7 +3,7 @@ import torch.nn as nn
 import torchvision.models as models
 
 class SiameseNetwork(nn.Module):
-    def __init__(self, embedding_dim=128, freeze_backbone=True):
+    def __init__(self, embedding_dim=128, freeze_backbone=False):
         super(SiameseNetwork, self).__init__()
         
         # Using resnet18 as a backbone
@@ -13,8 +13,8 @@ class SiameseNetwork(nn.Module):
         
         # Fully connected layer to project 512-d features from ResNet into a lower-dimensional embedding space
         self.fc = nn.Sequential(
-            nn.Linear(512, embedding_dim),
-            nn.ReLU(inplace=True)
+        nn.Linear(512, embedding_dim),
+        nn.ReLU(inplace=True)
         )
 
         if freeze_backbone:
