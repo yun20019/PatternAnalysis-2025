@@ -6,14 +6,14 @@ class SiameseNetwork(nn.Module):
     def __init__(self, embedding_dim=128, freeze_backbone=False):
         super(SiameseNetwork, self).__init__()
         
-        # Using resnet18 as a backbone
-        backbone = models.resnet18(pretrained=True)
+        # Using resnet50 as a backbone
+        backbone = models.resnet50(pretrained=True)
         modules = list(backbone.children())[:-1] 
         self.feature_extractor = nn.Sequential(*modules)
         
-        # Fully connected layer to project 512-d features from ResNet into a lower-dimensional embedding space
+        # Fully connected layer to project 2048-d features from ResNet into a lower-dimensional embedding space
         self.fc = nn.Sequential(
-        nn.Linear(512, embedding_dim),
+        nn.Linear(2048, embedding_dim),
         nn.ReLU(inplace=True)
         )
 
