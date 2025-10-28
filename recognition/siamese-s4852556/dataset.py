@@ -21,7 +21,6 @@ default_transform = transforms.Compose([
 # augmentation
 train_transform = transforms.Compose([
     transforms.RandomHorizontalFlip(),
-    transforms.RandomVerticalFlip(),
     transforms.RandomRotation(15),
     transforms.ColorJitter(brightness=0.2, contrast=0.2, saturation=0.2),
     transforms.ToTensor(),
@@ -117,7 +116,7 @@ class SiameseISICDataset(Dataset):
         img1_path = self.image_paths[idx1]
         y1 = int(self.labels[idx1])
 
-        want_positive = (self._rng.random() < 0.5)
+        want_positive = (self._rng.random() < 0.7)
 
         if want_positive and len(self.by_class[y1]) >= 2:
             idx2 = self._pick_different(self.by_class[y1], exclude_idx=idx1)
