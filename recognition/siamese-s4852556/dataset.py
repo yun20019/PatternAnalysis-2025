@@ -7,7 +7,7 @@ from torch.utils.data import Dataset, random_split, DataLoader
 from torchvision import transforms
 
 class SiameseDataset(Dataset):
-    def __init__(self, image_dir: str, csv_path: str, transform=None, pairs_per_epoch: int = 40000):
+    def __init__(self, image_dir: str, csv_path: str, transform=None, pairs_per_epoch: int = 20000):
         super().__init__()
         self.image_dir = image_dir
         self.metadata = pd.read_csv(csv_path)
@@ -58,7 +58,7 @@ class SiameseDataset(Dataset):
         return img1, img2, torch.tensor(label, dtype=torch.float32)
 
 
-def generate_dataloaders(image_dir: str, csv_path: str, batch_size: int = 32, pairs_per_epoch: int = 40000):
+def generate_dataloaders(image_dir: str, csv_path: str, batch_size: int = 32, pairs_per_epoch: int = 20000):
     # Set random seeds for reproducibility
     seed = 42
     random.seed(seed)
