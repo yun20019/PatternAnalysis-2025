@@ -94,7 +94,7 @@ To install them, run the following command inside the `siamese-s4852556` directo
 
 ### Future Work
 
-As the validation loss continued to decrease before the traing stopped, suggesting that convergence had not yet been fully reached. More epochs could be run to reach higher test accuracy and get a more stable model. Futhermore, advanced architectures such as EfficientNet-B3 and EfficientNet-B3 backbones can be applied to capture more complex image features and enhance overall performance.
+As the validation loss continued to decrease before the traing stopped, suggesting that convergence had not yet been fully reached. More epochs could be run to reach higher test accuracy and get a more stable model. Futhermore, advanced architectures such as EfficientNet-B3 backbones can be applied to capture more complex image features and enhance overall performance.
 
 ## References
 
